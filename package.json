@@ -1,0 +1,25 @@
+{
+  "name": "pagerduty",
+  "version": "0.0.1",
+  "description": "wrapper for node pagerduty library that adds throttling and some other features",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/davehorton/pagerduty.git"
+  },
+  "dependencies": {
+    "pagerduty": "0.0.3",
+    "lodash": "^4.11.1"
+  },
+  "devDependencies": {},
+
+  "author": "Dave Horton",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/davehorton/pagerduty/issues"
+  },
+  "homepage": "https://github.com/davehorton/pagerduty#readme"
+}
