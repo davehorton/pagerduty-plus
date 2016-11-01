@@ -18,8 +18,8 @@ function Alerter(opts) {
   if (!(this instanceof Alerter)) { return new Alerter(opts); }
   Emitter.call(this); 
 
-  assert.equals(typeof opts === 'object', '\'opts\' parameter must be provided') ;
-  assert.equals(_.isArray(opts.serviceKeys), '\'opts.serviceKeys\' parameter must be an array') ;
+  assert.ok(typeof opts === 'object', '\'opts\' parameter must be provided') ;
+  assert.ok(_.isArray(opts.serviceKeys), '\'opts.serviceKeys\' parameter must be an array') ;
 
   opts.events = opts.events || [] ;
 
@@ -43,7 +43,7 @@ function Alerter(opts) {
   */
   
   opts.events.forEach( function(ev) {
-    assert(typeof(ev.name) === 'string', 'objects in the \'opts.events\' array must have a \'name\' property') ;
+    assert.ok(typeof(ev.name) === 'string', 'objects in the \'opts.events\' array must have a \'name\' property') ;
 
     var obj = {
       description: ev.description || ev.name,
@@ -55,9 +55,8 @@ function Alerter(opts) {
 
     if( !!ev.throttle ) {
       var arr ;
-      if( arr = /(\d+)\s*([mins|min|secs|sec])/.exec( ev.throttle )  ) {
+      if( arr = /(\d+)\s*(mins|min|secs|sec)/.exec( ev.throttle )  ) {
         obj.throttle = parseInt( arr[1] ) * ( arr[2].indexOf('min') !== -1 ? 60 : 1) ;
-        console.log(`setting throttle to ${obj.throttle} secs for event ${ev.name}`) ;
       }
     }
 
@@ -110,7 +109,7 @@ function Alerter(opts) {
   this._incidents = {} ;
 
 }
-util.inherits(Request, Emitter) ;
+util.inherits(Alerter, Emitter) ;
 
 /**
  * Options governing the creation of an Alerter
@@ -150,7 +149,7 @@ util.inherits(Request, Emitter) ;
 
 
 Alerter.prototype.alert = function(name, level, details) {
-    assert.equals(typeof name === 'string', 'Alerter#alert: \'name\' is a required parameter') ;
+    assert.ok(typeof name === 'string', 'Alerter#alert: \'name\' is a required parameter') ;
 
     var throttle = false ;
     var severity = 0 ;
@@ -200,7 +199,7 @@ Alerter.prototype.alert = function(name, level, details) {
         pd.create({
           description: (event.description || name),
           details: details,
-          callback: this._onCreateIncident.bind( this, name, event, pd ) ;
+          callback: this._onCreateIncident.bind( this, name, event, pd ) 
         }) ;
       }, this) ;
 
@@ -211,7 +210,7 @@ Alerter.prototype.alert = function(name, level, details) {
             pd.create({
               description: (event.description || name),
               details: details,
-              callback: this._onCreateIncident.bind( this, name, event, pd ) ;
+              callback: this._onCreateIncident.bind( this, name, event, pd ) 
             }) ;
           }, this) ;
         }
