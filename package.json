@@ -4,7 +4,7 @@
   "description": "wrapper for node pagerduty library that adds throttling and some other features",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "make"
   },
   "repository": {
     "type": "git",
@@ -14,8 +14,21 @@
     "pagerduty": "0.0.3",
     "lodash": "^4.11.1"
   },
-  "devDependencies": {},
-
+  "devDependencies": {
+    "should": ">= 2.0.2 < 3",
+    "mocha": "~2.1.0",
+    "minimist": "^1.1.0",
+    "async": "~0.9.0",
+    "lodash": "^3.10.1",
+    "jsdoc": ">=3.3.0-*",
+    "grunt": "~0.4.2",
+    "grunt-contrib-jshint": "~0.7.2",
+    "grunt-contrib-nodeunit": "*",
+    "grunt-contrib-watch": "~0.5.3",
+    "grunt-jsdoc": "^1.0.0",
+    "grunt-github-pages": "0.0.4",
+    "minami": "^1.1.1"   
+  },
   "author": "Dave Horton",
   "license": "MIT",
   "bugs": {

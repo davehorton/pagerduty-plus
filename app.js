@@ -50,7 +50,7 @@ function Alerter(opts) {
       level: ev.level || 0,
       throttle: 0, 
       resolves: ev.resolves,
-      notify: ev.notify || true
+      notify: (false === ev.notify ? false : true)
     } ;
 
     if( !!ev.throttle ) {
@@ -92,15 +92,18 @@ function Alerter(opts) {
     filtered: []
   } ;
 
+  // this is to allow our tests tp mock the PagerDuty service
+  var PagerDutyService = Alerter.PagerDutyService || PagerDuty ;
+
   opts.serviceKeys.forEach( function(obj) {
     if( typeof obj === 'string') {
-      this._alerters.pd.push( new PagerDuty({ serviceKey: obj}) ) ;
+      this._alerters.pd.push( new PagerDutyService({ serviceKey: obj}) ) ;
     }
     else if( typeof obj === 'object' && 'level' in obj && 'keys' in obj ) {
       obj.keys = (typeof obj.keys === 'string' ? [obj.keys] : obj.keys) ;
       this._alerters.filtered.push({
         level: obj.level,
-        pd: _.map( obj.keys, function(key) { return new PagerDuty({ serviceKey: obj}); })
+        pd: _.map( obj.keys, function(key) { return new PagerDutyService({ serviceKey: obj}); })
       }) ;
     }
   }, this) ;
@@ -148,23 +151,27 @@ util.inherits(Alerter, Emitter) ;
  */
 
 
-Alerter.prototype.alert = function(name, level, details) {
+Alerter.prototype.alert = function(name, opts, callback ) {
     assert.ok(typeof name === 'string', 'Alerter#alert: \'name\' is a required parameter') ;
 
+    if( typeof opts === 'function' ) {
+      callback = opts ;
+      opts = {} ;
+    }
+    opts = opts || {} ;
+
+    var level = opts.level  ;
+    var details = opts.details || {} ;
+    var target = opts.target || 'default' ;
     var throttle = false ;
-    var severity = 0 ;
+    var sent = 0 ;
+    var resolved = 0 ;
     var now = (new Date()).getTime() ;
 
-    if( typeof level === 'number') {
-      severity = level ;
-    }
-    else {
-      details = level || {} ;
-    }
     details.hostname = os.hostname() ;
 
 
-    var event = _.find( this._knownEvents, function(el) { return el.name === name; }) || {} ;
+    var event = _.find( this._knownEvents, function(obj, key) { return key === name; }) || {notify: true} ;
 
     // check to see if this alert should be throttled
     if( event.throttle ) {
@@ -175,7 +182,7 @@ Alerter.prototype.alert = function(name, level, details) {
           var then = this._errorHistory[name] ;
           var secsSinceLastAlert = (now-then) / (1000) ;
 
-          if(  secsSinceLastAlert < error.throttle ) {
+          if(  secsSinceLastAlert < event.throttle ) {
               throttle = true ;
               this._errorHistory[name] = (new Date()).getTime() ;
           }
@@ -183,11 +190,13 @@ Alerter.prototype.alert = function(name, level, details) {
     }
 
     //automatically resolve any earlier incidents that this event fixes
-    if( event.resolves && event.resolves in this._incidents ) {
-      this._incidents[event.resolves].forEach( function(resolver) { 
+    if( event.resolves && event.resolves in this._incidents && target in this._incidents[event.resolves] ) {
+
+      this._incidents[event.resolves][target].forEach( function(resolver) { 
+        resolved++ ;
         resolver(); 
       }, this) ;
-      delete this._incidents[event.resolves];
+      delete this._incidents[event.resolves][target];
     }
     
 
@@ -196,10 +205,11 @@ Alerter.prototype.alert = function(name, level, details) {
 
       // send to those pagerduty accounts that get all alerts 
       this._alerters.pd.forEach( function(pd) {
+        sent++ ;
         pd.create({
           description: (event.description || name),
           details: details,
-          callback: this._onCreateIncident.bind( this, name, event, pd ) 
+          callback: this._onCreateIncident.bind( this, name, event, pd, target ) 
         }) ;
       }, this) ;
 
@@ -207,31 +217,47 @@ Alerter.prototype.alert = function(name, level, details) {
       this._alerters.filtered.forEach( function(obj) {
         if( level >= obj.level ) {
           obj.pd.forEach( function(pd) {
+            sent++ ;
             pd.create({
               description: (event.description || name),
               details: details,
-              callback: this._onCreateIncident.bind( this, name, event, pd ) 
+              callback: this._onCreateIncident.bind( this, name, event, pd, target ) 
             }) ;
           }, this) ;
         }
       }, this) ;
     }
+
+    if( callback ) {
+      process.nextTick( function() {
+        callback( null, {
+          event: event,
+          throttled: throttle,
+          sent: sent,
+          resolved: resolved
+        }) ;
+      }) ;
+    }
 }
 
-Alerter.prototype._onCreateIncident = function( name, event, pd, err, response ) {
+Alerter.prototype._onCreateIncident = function( name, event, pd, target, err, response ) {
     if( err ) {
       this.emit('error', err) ;
     }
     else if( event.resolvedBy ) {
-      this._incidents[name] = this._incidents[name] || [] ;
-      var resolver = pd.resolve.bind( null, {
-        incidentKey: response.incident_key,
+
+      // create the structure for saved incidents of this name if necessary
+      var incidents = this._incidents[name] = (this._incidents[name] || {}) ;
+      incidents[target] = incidents[target] || [] ;
+
+      var resolver = pd.resolve.bind( pd, {
+        incidentKey: response.incidentKey,
         description: `resolved automatically due to ${event.resolvedBy}`,
         details: {
           hostname: os.hostname()
         }
       }) ;
-      this._incidents[name].push( resolver ) ;
+      incidents[target].push( resolver ) ;
     }
 }
 
