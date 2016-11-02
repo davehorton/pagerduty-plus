@@ -18,7 +18,7 @@ PagerDuty.prototype.create = function(opts) {
   // return success ;
   process.nextTick( function() {
     callback( null, {
-      incidentKey: incidentKey
+      incident_key: incidentKey
     }) ;
   }) ;
 }

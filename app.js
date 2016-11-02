@@ -258,7 +258,7 @@ Alerter.prototype._onCreateIncident = function( name, event, pd, target, err, re
       incidents[target] = incidents[target] || [] ;
 
       var resolver = pd.resolve.bind( pd, {
-        incidentKey: response.incidentKey,
+        incidentKey: response.incident_key,
         description: `resolved automatically due to ${event.resolvedBy}`,
         details: {
           hostname: os.hostname()
