@@ -261,7 +261,8 @@ Alerter.prototype._onCreateIncident = function( name, event, pd, target, err, re
         incidentKey: response.incident_key,
         description: `resolved automatically due to ${event.resolvedBy}`,
         details: {
-          hostname: os.hostname()
+          hostname: os.hostname(),
+          target: target
         }
       }) ;
       incidents[target].push( resolver ) ;
