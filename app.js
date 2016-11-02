@@ -34,7 +34,7 @@ function Alerter(opts) {
       description: 'lengthier description which gets sent to pagerduty',
       level: (optional) integer value representing severity, higher means more severe
       throttle: integer representing interval in seconds that must elapse before re-sending this alert (0 means no throttling)
-      resolves: (optional) name of another event that this event resolves (e.g. 'connection established' may resolve 'connection lost')
+      resolves: (optional) Array| string name(s) of (a) related event(s) that this event resolves (e.g. 'connection established' may resolve 'connection lost')
       resolvedBy: (optional) reverse pointer to the above; i.e. name of an event that resolves an incident of this type,
       notify: boolean, indicating whether to send an alert to pager duty for this event (e.g. an event may simply resolve another event)
     }
@@ -49,7 +49,7 @@ function Alerter(opts) {
       description: ev.description || ev.name,
       level: ev.level || 0,
       throttle: 0, 
-      resolves: ev.resolves,
+      resolves: typeof ev.resolves === 'string' ? [ev.resolves] : (_.isArray(ev.resolves) ? ev.resolves : []),
       notify: (false === ev.notify ? false : true)
     } ;
 
@@ -61,7 +61,7 @@ function Alerter(opts) {
     }
 
     if( !!ev.resolves ) {
-      resolves[ev.name] = ev.resolves ;
+      resolves[ev.name] = typeof ev.resolves === 'string' ? [ev.resolves] : ev.resolves ;
     }
 
     this._knownEvents[ev.name] = obj ;
@@ -69,10 +69,13 @@ function Alerter(opts) {
   }, this) ;
 
   // point back to which event resolves this one (if any)
-  _.each( resolves, function( value, key ) {
-    if( !!this._knownEvents[value] ) {
-      this._knownEvents[value].resolvedBy = key ;
-    }
+  _.each( resolves, function( arr, key ) {
+    arr.forEach( function(eventName) {
+      if( eventName in this._knownEvents ) {
+        this._knownEvents[eventName].resolvedBy = this._knownEvents[eventName].resolvedBy || [] ;
+        this._knownEvents[eventName].resolvedBy.push( key ) ;
+      }
+    }, this) ;
   }.bind(this) ) ;
 
   /* configure this._alerters, which will be in the form:
@@ -128,12 +131,12 @@ util.inherits(Alerter, Emitter) ;
  *        description: 'lost connection to sip server',
  *        level: 1
  *        throttle: '5 mins',
- *        resolvedBy: 'GAINED_CONNECTION'
  *     },
  *     {
  *       name: 'GAINED_CONNECTION',
  *       description: 'gained connection to sip server',
- *       level: 2
+ *       level: 2,
+ *        resolves: 'LOST_CONNECTION'
  *     }
  *   ],
  *   serviceKeys: [
@@ -171,7 +174,7 @@ Alerter.prototype.alert = function(name, opts, callback ) {
     details.hostname = os.hostname() ;
 
 
-    var event = _.find( this._knownEvents, function(obj, key) { return key === name; }) || {notify: true} ;
+    var event = _.find( this._knownEvents, function(obj, key) { return key === name; }) || {notify: true, resolves: []} ;
 
     // check to see if this alert should be throttled
     if( event.throttle ) {
@@ -190,15 +193,19 @@ Alerter.prototype.alert = function(name, opts, callback ) {
     }
 
     //automatically resolve any earlier incidents that this event fixes
-    if( event.resolves && event.resolves in this._incidents && target in this._incidents[event.resolves] ) {
+   // if( event.resolves && event.resolves in this._incidents && target in this._incidents[event.resolves] ) {
+   if( event.resolves.length > 0 ) {
 
-      this._incidents[event.resolves][target].forEach( function(resolver) { 
-        resolved++ ;
-        resolver(); 
+      event.resolves.forEach( function(resolvedEventName) {
+        if( resolvedEventName in this._incidents && target in this._incidents[resolvedEventName] ) {
+          this._incidents[resolvedEventName][target].forEach( function(resolver) { 
+            resolved++ ;
+            resolver(); 
+          }, this) ;
+          delete this._incidents[resolvedEventName][target];
+        }
       }, this) ;
-      delete this._incidents[event.resolves][target];
-    }
-    
+   }
 
     // send the alerts if we are not throttling and this event is configured to generate an alert
     if( event.notify === true && !throttle ) {
@@ -244,7 +251,7 @@ Alerter.prototype._onCreateIncident = function( name, event, pd, target, err, re
     if( err ) {
       this.emit('error', err) ;
     }
-    else if( event.resolvedBy ) {
+    else if( event.resolvedBy && event.resolvedBy.length > 0 ) {
 
       // create the structure for saved incidents of this name if necessary
       var incidents = this._incidents[name] = (this._incidents[name] || {}) ;

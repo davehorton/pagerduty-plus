@@ -192,7 +192,7 @@ describe('Alerter', function(){
     }) ;
   }) ;
 
-  it('should be able to automatically resolve multiple incidents at once', function(done) {
+  it('should be able to automatically resolve multiple incidents of the same type at once', function(done) {
     var alerter = new Alerter({ 
       serviceKeys: ['dummy-key'],
       events: [
@@ -239,5 +239,57 @@ describe('Alerter', function(){
     }) ;
   }) ;
 
+  it('should be able to automatically resolve multiple incidents of the different types at once', function(done) {
+    var alerter = new Alerter({ 
+      serviceKeys: ['dummy-key'],
+      events: [
+        {
+          name: 'DNS-FAILED',
+          description: 'complete failure'
+        },
+        {
+          name: 'DNS-UNEXPECTED-RESULTS',
+          description: 'hmm...not what we were expecting'
+        },
+        {
+          name: 'DNS-SUCCESS',
+          description: 'All good',
+          resolves: ['DNS-FAILED', 'DNS-UNEXPECTED-RESULTS'],
+          notify: false
+        }        
+      ]
+    }) ;
+
+    // send one alert
+    alerter.alert('DNS-FAILED', {
+      target: 'my-domain'
+    }, function(err, results) {
+      if( err ) { return done(err); }
+      results.sent.should.equal(1);
+      alerter._incidents['DNS-FAILED']['my-domain'].length.should.equal(1) ;
+
+      // send a second alert of a different type
+      alerter.alert('DNS-UNEXPECTED-RESULTS', {
+        target: 'my-domain'
+      }, function(err, results) {
+        if( err ) { return done(err); }
+        results.sent.should.equal(1);
+        alerter._incidents['DNS-FAILED']['my-domain'].length.should.equal(1) ;
+        alerter._incidents['DNS-UNEXPECTED-RESULTS']['my-domain'].length.should.equal(1) ;
+
+        // resolve them both
+        alerter.alert('DNS-SUCCESS', {
+          target: 'my-domain'
+        }, function(err, results) {
+          if( err ) { return done(err); }
+          results.sent.should.equal(0);
+          results.resolved.should.equal(2);
+          should.not.exist(alerter._incidents['DNS-FAILED']['my-domain']) ;
+          should.not.exist(alerter._incidents['DNS-UNEXPECTED-RESULTS']['my-domain']) ;
+          done(null) ;
+        }) ;
+      }); 
+    }) ;
+  }) ;
 
 }) ;
