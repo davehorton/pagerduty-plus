@@ -10,9 +10,9 @@ var os = require('os') ;
 module.exports = exports = Alerter ;
 
 /**
- * A PagerDuty integration capable of notifying multiple accounts, throttling and filtering alerts
+ * A PagerDuty service capable of notifying multiple accounts, throttling and filtering alerts
  * @constructor
- * @param {Alerter~createOptions}  [opts] - Alerter configuration options
+ * @param {Alerter~createOptions} opts - configuration options
  */
 function Alerter(opts) {
   if (!(this instanceof Alerter)) { return new Alerter(opts); }
@@ -117,43 +117,13 @@ function Alerter(opts) {
 }
 util.inherits(Alerter, Emitter) ;
 
+
 /**
- * Options governing the creation of an Alerter
- * @typedef {Object} Alerter~createOptions
- * @property {Array} events - array of known events
- * @property {Array} serviceKeys - array of pagerduty service keys
- *
- * ex:
- * {
- *   events: [
- *     {
- *        name: 'LOST_CONNECTION', 
- *        description: 'lost connection to sip server',
- *        level: 1
- *        throttle: '5 mins',
- *     },
- *     {
- *       name: 'GAINED_CONNECTION',
- *       description: 'gained connection to sip server',
- *       level: 2,
- *        resolves: 'LOST_CONNECTION'
- *     }
- *   ],
- *   serviceKeys: [
- *     {
- *       level: 0,
- *       keys: ['xxxxxx', 'yyyyyy']
- *     },
- *     {
- *       level: 1,
- *       keys: ['zzzzzz']
- *     }
- *   ]
- * } 
- * 
+ * invoked when an event has occurred; depending on the situation this may result in pagerduty incidents being created or resolved
+ * @param  {string}   name     name of event that has occurred
+ * @param  {Alerter~alertOptions}   [opts]  options
+ * @param  {Alerter~alertCallback} [callback] callback that receives information about the operation 
  */
-
-
 Alerter.prototype.alert = function(name, opts, callback ) {
     assert.ok(typeof name === 'string', 'Alerter#alert: \'name\' is a required parameter') ;
 
@@ -269,4 +239,43 @@ Alerter.prototype._onCreateIncident = function( name, event, pd, target, err, re
     }
 }
 
+/**
+ * This callback is invoked to return information when <code>Alerter#alert</code> is invoked.
+ * @callback Alerter~alertCallback
+ * @param {Error} err - if an error occurred while attempting to create an incident on pagerduty
+ * @param {Object} event - the defined event that was alerted
+ * @param {boolean} throttled - true if the event was throttled and no pagerduty incident was created
+ * @param {number} sent - number of pagerduty incidents created
+ * @param {number} resolved - number of pagerduty incidents resolved
+ */
 
+/**
+ * Constructor options
+ * @typedef {Object} Alerter~createOptions
+ * @property {Alerter~definedEvents} [events] - Array of events
+ * @property {Alerter~serviceKeys} serviceKeys - Array of service keys
+ */
+ 
+/**
+ * Array of information about pagerduty service keys
+ * @typedef {Array} Alerter~serviceKeys
+ * @property {string|Object}  key - either a single pagerduty service key, or an object with a 'level' and 'keys' property -- in the latter case, 'level' indicates the minimum severity level for which pagerduty alerts will be generated for these keys; keys is an array of pagerduty service keys
+ */
+
+ /**
+  * Array of event definitions
+  * @typedef {Array} Alerter~definedEvents
+  * @property {string} name event name
+  * @property {string} [description] event description
+  * @property {number} [level] severity level (non-negative integer; higher values infer greater severity) - default: highest severity
+  * @property {boolean} [notify] whether or not to send an alert to pagerduty (default: true)
+  * @property {Array|string} [resolves] name(s) of events that this event should resolve on pagerduty
+  * @property {string} [throttle] minimum interval between successive pagerduty alerts (format: "45 secs" or "5 mins"); default is no throttling
+  */
+/**
+ * options passed to the <code>Alerter#alert</code> method
+ * @typedef {Object} Alerter~alertOptions
+ * @property {string} [target] - identifier for a specific instance of an event of a given name (e.g. 'LOST-DB-CONNECTION' may have targets 'primary-db' and 'backup-db').  The target property is only needed to disambiguate when resolving incidents pertaining to a specific resource.
+ * @property {number} [level] - severity level for this alert
+ * @property {Object} [details] - any details to pass on to pagerduty when creating an incident
+ */
