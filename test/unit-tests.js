@@ -61,29 +61,25 @@ describe('Alerter', function(){
       serviceKeys: ['dummy-key1', {level: 2, keys: ['dummy-key2', 'dummy-key3']}],
       events: [
         {
-          name: 'KNOWN-EVENT',
-          description: 'this is a known alert'
+          name: 'SEVERE-EVENT',
+          description: 'this is a known alert', 
+          level: 10
+        },
+        {
+          name: 'INFORMATIONAL-EVENT',
+          description: 'this is a known alert', 
+          level: 1
         }
       ]
     }) ;
-    alerter.alert('KNOWN-EVENT', function(err, results) {
+    alerter.alert('SEVERE-EVENT', function(err, results) {
       if( err ) { return done(err); }
-      results.sent.should.equal(1);
+      results.sent.should.equal(3);
 
-      alerter.alert('KNOWN-EVENT', {level: 1}, function(err, results) {
+      alerter.alert('INFORMATIONAL-EVENT', function(err, results) {
         if( err ) { return done(err); }
         results.sent.should.equal(1);
-
-        alerter.alert('KNOWN-EVENT', {level: 2}, function(err, results) {
-          if( err ) { return done(err); }
-          results.sent.should.equal(3);
-
-          alerter.alert('KNOWN-EVENT', {level: 3}, function(err, results) {
-            if( err ) { return done(err); }
-            results.sent.should.equal(3);
-            done(null) ;
-          }) ;
-        }) ;
+        done(null) ;
       }) ;
     }) ;    
   }) ;

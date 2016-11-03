@@ -1,6 +1,6 @@
 {
   "name": "pagerduty-plus",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "wrapper for node pagerduty library that adds throttling and some other features",
   "main": "app.js",
   "scripts": {
@@ -29,6 +29,10 @@
     "grunt-github-pages": "0.0.4",
     "minami": "^1.1.1"   
   },
+  "keywords": [
+    "pagerduty"
+  ],
+
   "author": "Dave Horton",
   "license": "MIT",
   "bugs": {

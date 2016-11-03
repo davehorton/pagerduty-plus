@@ -144,7 +144,7 @@ Alerter.prototype.alert = function(name, opts, callback ) {
     details.hostname = os.hostname() ;
 
 
-    var event = _.find( this._knownEvents, function(obj, key) { return key === name; }) || {notify: true, resolves: []} ;
+    var event = _.find( this._knownEvents, function(obj, key) { return key === name; }) || {notify: true, resolves: [], level: Number.MAX_VALUE} ;
 
     // check to see if this alert should be throttled
     if( event.throttle ) {
@@ -192,7 +192,7 @@ Alerter.prototype.alert = function(name, opts, callback ) {
 
       // send to any filtered clients that want this severity level 
       this._alerters.filtered.forEach( function(obj) {
-        if( level >= obj.level ) {
+        if( event.level >= obj.level ) {
           obj.pd.forEach( function(pd) {
             sent++ ;
             pd.create({
