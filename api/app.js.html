@@ -159,44 +159,6 @@ util.inherits(Alerter, Emitter) ;
 
 
 /**
- * Constructor options
- * @typedef {Object} Alerter~createOptions
- * @property {Alerter~definedEvents} [events] - Array of events
- * @property {Alerter~serviceKeys} serviceKeys - Array of service keys
- */
- 
-/**
- * pagerduty service keys
- * @typedef {Array} Alerter~serviceKeys
- * @property {string|Object}  key - either a single pagerduty service key, or an object with a 'level' and 'keys' property -- in the latter case, 'level' indicates the minimum severity level for which pagerduty alerts will be generated for these keys; keys is an array of pagerduty service keys
- */
-
- /**
-  * definition of event schema
-  * @typedef {Array} Alerter~definedEvents
-  * @property {string} name event name
-  * @property {string} [description] event description
-  * @property {number} [level] severity level (non-negative integer; higher values infer greater severity) - default: highest severity
-  * @property {boolean} [notify] whether or not to send an alert to pagerduty (default: true)
-  * @property {Array|string} [resolves] name(s) of events that this event should resolve on pagerduty
-  * @property {string} [throttle] minimum interval between successive pagerduty alerts (format: "45 secs" or "5 mins"); default is no throttling
-  */
-
-
-/**
- * invoked when an event has occurred; depending on the situation this may result in pagerduty incidents being created or resolved
- * @param  {string}   name     name of event that has occurred
- * @param  {Alert~alertOptions}   [opts]  options
- * @param  {Alert~alertCallback} [callback] callback that receives information about the operation 
- */
-/**
- * alert options
- * @typedef {Object} Alerter~alertOptions
- * @property {string} [target] - identifier for a specific instance of an event of a given name (e.g. 'LOST-DB-CONNECT' may have targets 'primary-db' and 'backup-db').  The target property is only needed to disambiguate when resolving incidents pertaining to a specific resource.
- * @property {number} [level] - severity level for this alert
- * @property {Object} [details] - any details to pass on to pagerduty
- */
-/**
  * This callback is invoked to return information when Alerter#alert is invoked.
  * @callback Alert~alertCallback
  * @param {Error} err - if an error occurred while attempting to create an incident on pagerduty
@@ -205,7 +167,6 @@ util.inherits(Alerter, Emitter) ;
  * @param {number} sent - number of pagerduty incidents created
  * @param {number} resolved - number of pagerduty incidents resolved
  */
-
 Alerter.prototype.alert = function(name, opts, callback ) {
     assert.ok(typeof name === 'string', 'Alerter#alert: \'name\' is a required parameter') ;
 
@@ -322,6 +283,44 @@ Alerter.prototype._onCreateIncident = function( name, event, pd, target, err, re
 }
 
 
+/**
+ * Constructor options
+ * @typedef {Object} Alerter~createOptions
+ * @property {Alerter~definedEvents} [events] - Array of events
+ * @property {Alerter~serviceKeys} serviceKeys - Array of service keys
+ */
+ 
+/**
+ * pagerduty service keys
+ * @typedef {Array} Alerter~serviceKeys
+ * @property {string|Object}  key - either a single pagerduty service key, or an object with a 'level' and 'keys' property -- in the latter case, 'level' indicates the minimum severity level for which pagerduty alerts will be generated for these keys; keys is an array of pagerduty service keys
+ */
+
+ /**
+  * definition of event schema
+  * @typedef {Array} Alerter~definedEvents
+  * @property {string} name event name
+  * @property {string} [description] event description
+  * @property {number} [level] severity level (non-negative integer; higher values infer greater severity) - default: highest severity
+  * @property {boolean} [notify] whether or not to send an alert to pagerduty (default: true)
+  * @property {Array|string} [resolves] name(s) of events that this event should resolve on pagerduty
+  * @property {string} [throttle] minimum interval between successive pagerduty alerts (format: "45 secs" or "5 mins"); default is no throttling
+  */
+
+
+/**
+ * invoked when an event has occurred; depending on the situation this may result in pagerduty incidents being created or resolved
+ * @param  {string}   name     name of event that has occurred
+ * @param  {Alert~alertOptions}   [opts]  options
+ * @param  {Alert~alertCallback} [callback] callback that receives information about the operation 
+ */
+/**
+ * alert options
+ * @typedef {Object} Alerter~alertOptions
+ * @property {string} [target] - identifier for a specific instance of an event of a given name (e.g. 'LOST-DB-CONNECT' may have targets 'primary-db' and 'backup-db').  The target property is only needed to disambiguate when resolving incidents pertaining to a specific resource.
+ * @property {number} [level] - severity level for this alert
+ * @property {Object} [details] - any details to pass on to pagerduty
+ */
 </code></pre>
         </article>
     </section>
@@ -334,7 +333,7 @@ Alerter.prototype._onCreateIncident = function( name, event, pd, target, err, re
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.2</a> on Wed Nov 02 2016 21:07:00 GMT-0400 (EDT) using the Minami theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.2</a> on Wed Nov 02 2016 21:08:26 GMT-0400 (EDT) using the Minami theme.
 </footer>
 
 <script>prettyPrint();</script>
